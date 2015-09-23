@@ -6,10 +6,21 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.lang.String.valueOf;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,15 +58,15 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class HttpRequestTask extends AsyncTask<Void, Void, Ingredient> {
+    private class HttpRequestTask extends AsyncTask<Void, Void, Ingredient[]> {
 
         @Override
-        protected Ingredient doInBackground(Void... params) {
+        protected Ingredient[] doInBackground(Void... params) {
             try {
                 RestTemplate restTemplate = new RestTemplate();
                 restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
                 return restTemplate.getForObject("http://prod-drunkedguru.rhcloud.com/rest/ingredients",
-                        Ingredient[].class)[0];
+                        Ingredient[].class);
             } catch (Exception e) {
                 Log.e("MainActivity", e.getMessage(), e);
             }
@@ -64,11 +75,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(Ingredient ingredient) {
-            TextView idText = (TextView) findViewById(R.id.id_value);
-            TextView content = (TextView) findViewById(R.id.content_value);
-            idText.setText(ingredient.getId().toString());
-            content.setText(ingredient.getName());
+        protected void onPostExecute(Ingredient[] ingredients) {
+            List<String> list = new ArrayList<>();
+            for (Ingredient ingredient : ingredients) {
+                list.add(ingredient.getName());
+            }
+            ListAdapter listAdapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, list);
+            ListView listView = (ListView) findViewById(R.id.theListView);
+            listView.setAdapter(listAdapter);
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    String s = valueOf(parent.getItemAtPosition(position));
+                    Toast.makeText(MainActivity.this, s, Toast.LENGTH_SHORT).show();
+                }
+            });
+//            TextView idText = (TextView) findViewById(R.id.id_value);
+//            TextView content = (TextView) findViewById(R.id.content_value);
+//            idText.setText(ingredient.getId().toString());
+//            content.setText(ingredient.getName());
         }
     }
 }
